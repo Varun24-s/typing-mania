@@ -2,7 +2,7 @@ import "./globals.css"
 import { ReactNode } from "react"
 import localFont from "next/font/local"
 
-export const myFont = localFont({
+const myFont = localFont({
   src: './fonts/ByteBounce.ttf',
   display: "swap",
 })

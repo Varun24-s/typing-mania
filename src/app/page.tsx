@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import localFont from "next/font/local";
 import uniqid from "uniqid";
 import { TypewriterEffect } from "@/components/typewriter-effect";
 

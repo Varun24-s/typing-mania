@@ -1,5 +1,11 @@
 import RoomClient from "@/components/RoomClient";
 
-export default function RoomPage({ params }: { params: { roomId: string } }) {
+interface RoomPageProps {
+  params: {
+    roomId: string;
+  };
+}
+
+export default function RoomPage({ params }: RoomPageProps) {
   return <RoomClient roomId={params.roomId} />;
 }

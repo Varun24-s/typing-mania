@@ -1,7 +1,6 @@
 "use client"
 import TypingTest from "@/components/TypingTest"
 import { useRouter } from "next/navigation"
-import { mysFont } from "../fonts";
 
 export default function TypingTestPage() {
   const router = useRouter();

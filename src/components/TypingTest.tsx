@@ -1,9 +1,7 @@
 "use client"
 
 import { generateText } from "@/utils/generateText"
-import localFont from "next/font/local"
 import { useEffect, useRef, useState } from "react"
-import { mysFont } from "@/app/fonts"
 
 
 
@@ -70,7 +68,7 @@ const TypingTest = () => {
           {timeLeft === 0 ? (
             // ⏱ Result screen
             <div className="flex flex-col items-center mt-50 mr-15 min-h-screen bg-[#2b4031] text-[#F1F5F9] p-4 text-center z-5">
-              <h1 className="text-5xl font-bold mb-6">⏱ Time's Up!</h1>
+              <h1 className="text-5xl font-bold mb-6">⏱ Time&aposs Up!</h1>
               <p className="text-3xl mb-2">⌨️ Words Per Minute (WPM): <span className="text-green-400">{wpm}</span></p>
               <p className="text-3xl mb-8">✅ Accuracy: <span className="text-green-400">{accuracy}%</span></p>
               <button

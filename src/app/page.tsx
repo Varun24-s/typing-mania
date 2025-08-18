@@ -6,11 +6,6 @@ import localFont from "next/font/local";
 import uniqid from "uniqid";
 import { TypewriterEffect } from "@/components/typewriter-effect";
 
-const mysFont = localFont({
-  src: './fonts/Geo-Regular.ttf',
-  display: "swap",
-});
-
 export default function Home() {
   const router = useRouter();
   const [showHostModal, setShowHostModal] = useState(false);

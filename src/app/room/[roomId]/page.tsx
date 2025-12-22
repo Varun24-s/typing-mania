@@ -1,11 +1,13 @@
 import RoomClient from "@/components/RoomClient";
 
 interface RoomPageProps {
-  params: {
+  params: Promise<{
     roomId: string;
-  };
+  }>;
 }
 
-export default function RoomPage({ params }: RoomPageProps) {
-  return <RoomClient roomId={params.roomId} />;
+export default async function RoomPage({ params }: RoomPageProps) {
+  const { roomId } = await params;
+
+  return <RoomClient roomId={roomId} />;
 }

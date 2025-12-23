@@ -2,18 +2,19 @@
 
 
 .mybutton{
-    background-color: #FF6b6b;
-    padding: 0rem 1rem;
-    color: #27272a;
+    background-color: #63b3ed;
+    padding: 0.5rem 1rem;
+    color: rgb(25, 8, 110);
     border-radius: 0.5rem;
     transition: all;
     transition-duration: 100ms;
+    border: rgb(40, 1, 1) 0.5px solid;
 }
 
 .mybutton:hover{
-    background-color: #804141 ;
-    scale: 1.15;
-    color: #e4e4e7;
+    background-color: #0e90ed; ;
+    scale: 1.03;
+    color: rgb(16, 3, 79);
 }
 
 /* bg-[#FF6B6B] px-4  text-zinc-800 rounded-lg hover:bg-[#804141] hover:scale-115 hover:text-zinc-200 transition-all duration-100 */

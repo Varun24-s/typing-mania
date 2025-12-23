@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from "react"
 import { generateText } from "@/utils/generateText"
 import { Socket } from "socket.io-client"
 import { useRouter } from "next/navigation"
+import { IoPeopleSharp } from "react-icons/io5";
+import { LuAlarmClock } from "react-icons/lu";
 
 interface TypingRaceProps {
   socket: Socket
   roomId: string
   username: string
+  players: string[]
 }
 
 interface Opponent {
@@ -18,11 +21,11 @@ interface Opponent {
   finished: boolean
 }
 
-const TypingRace = ({ socket, roomId, username }: TypingRaceProps) => {
+const TypingRace = ({ socket, roomId, username, players }: TypingRaceProps) => {
   const router = useRouter()
   const [text, setText] = useState("")
   const [userInput, setUserInput] = useState("")
-  const [timeLeft, setTimeLeft] = useState(6)
+  const [timeLeft, setTimeLeft] = useState(3)
   const [started, setStarted] = useState(false)
   const [wpm, setWpm] = useState(0)
   const [accuracy, setAccuracy] = useState(100)
@@ -63,6 +66,24 @@ const TypingRace = ({ socket, roomId, username }: TypingRaceProps) => {
       socket.off("user-finished")
     }
   }, [])
+
+  useEffect(() => {
+    const initialOpponents: Record<string, Opponent> = {};
+
+    players.forEach(name => {
+      if (name !== username) {
+        initialOpponents[name] = {
+          username: name,
+          wpm: 0,
+          accuracy: 100,
+          finished: false,
+        };
+      }
+    });
+
+    setOpponents(initialOpponents);
+  }, [players]);
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!started) setStarted(true)
@@ -174,40 +195,34 @@ const TypingRace = ({ socket, roomId, username }: TypingRaceProps) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#2b4031] text-white">
-      <aside className="w-64 bg-[#1f2d23] p-4 border-r border-green-800">
-        <h3 className="text-2xl font-semibold mb-4">👥 Opponents</h3>
-        <ul className="space-y-4">
-          {Object.keys(opponents)
-            .filter(name => name !== username)
-            .map(name => (
-              <li key={name} className="flex items-center gap-3 text-lg">
-                <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white font-bold">
-                  {name.charAt(0).toUpperCase()}
-                </div>
-                <span>{name}</span>
-              </li>
-            ))}
-        </ul>
-      </aside>
+    <div className="min-h-screen flex text-white">
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="text-3xl font-bold mb-4">Typing Race Room: {roomId}</div>
+      {/* LEFT: Typing Area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-10">
+        <div className="text-3xl font-bold mb-10">
+          Typing Race Room: {roomId}
+        </div>
 
         <div
-          className="text-xl font-mono bg-gray-800 p-6 rounded-xl w-full max-w-4xl mb-6 cursor-text min-h-[150px]"
+          className="text-xl font-mono border p-6 rounded-lg w-full max-w-2xl mb-6 border-blue-400 cursor-text min-h-[150px]"
           onClick={() => inputRef.current?.focus()}
         >
           {text.split("").map((char, i) => {
             let className = ""
             if (i < userInput.length) {
-              className = char === userInput[i] ? "text-green-400" : "text-red-500"
+              className =
+                char === userInput[i]
+                  ? "text-blue-400"
+                  : "text-red-500"
             }
+
             const isCursor = i === userInput.length
+
             return (
               <span
                 key={i}
-                className={`${className} ${isCursor ? "bg-white text-black animate-pulse" : ""}`}
+                className={`${className} ${isCursor ? "bg-white text-black animate-pulse" : ""
+                  }`}
               >
                 {char}
               </span>
@@ -217,16 +232,41 @@ const TypingRace = ({ socket, roomId, username }: TypingRaceProps) => {
 
         <input
           ref={inputRef}
-          defaultValue=""
           onKeyDown={handleKeyDown}
           className="opacity-0 absolute pointer-events-none"
           autoFocus
         />
 
-        <p className="text-xl mt-4">⏱ Time Left: {timeLeft}s</p>
+        <p className="text-xl mt-4 flex items-center gap-2"><LuAlarmClock />Time Left: {timeLeft}s</p>
       </div>
+
+      {/* RIGHT: Opponents Sidebar */}
+      <aside className="w-[280px] border-l border-gray-700 p-6 ">
+        <h3 className="text-2xl flex items-center gap-3 font-semibold mb-6">
+          <IoPeopleSharp />
+          Opponents
+        </h3>
+
+        <ul className="space-y-4">
+          {Object.keys(opponents)
+            .filter(name => name !== username)
+            .map(name => (
+              <li
+                key={name}
+                className="flex items-center gap-3 text-lg"
+              >
+                <div className="w-9 h-9 rounded-full bg-green-600 flex items-center justify-center font-bold">
+                  {name.charAt(0).toUpperCase()}
+                </div>
+                <span>{name}</span>
+              </li>
+            ))}
+        </ul>
+      </aside>
+
     </div>
   )
+
 }
 
 export default TypingRace

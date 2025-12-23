@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import uniqid from "uniqid";
 import { TypewriterEffect } from "@/components/typewriter-effect";
+import { socket } from "@/lib/socket";
+
 
 export default function Home() {
   const router = useRouter();
@@ -12,6 +14,31 @@ export default function Home() {
   const [hostUsername, setHostUsername] = useState("");
   const [joinUsername, setJoinUsername] = useState("");
   const [roomIdInput, setRoomIdInput] = useState("");
+
+  // const socketRef = useRef<any>(null);
+  // useEffect(() => {
+  //   // connect once on mount; defaults to same origin
+  //   socketRef.current = io();
+  //   return () => {
+  //     socketRef.current?.disconnect();
+  //   };
+  // }, []);
+
+  useEffect(() => {
+  socket.on("username-error", (msg: string) => {
+    alert(`❌ ${msg}`);
+  });
+
+  socket.on("room-error", (msg: string) => {
+    alert(`❌ ${msg}`);
+  });
+
+  return () => {
+    socket.off("username-error");
+    socket.off("room-error");
+  };
+}, []);
+
 
   const handleStart = () => {
     router.push("/TypingTest");
@@ -27,14 +54,42 @@ export default function Home() {
 
   const handleSubmitHost = () => {
     if (!hostUsername.trim()) return;
+
     const roomId = uniqid();
-    router.push(`/room/${roomId}?host=true&username=${encodeURIComponent(hostUsername)}`);
+
+    socket.emit("create-room", {
+      roomId,
+      username: hostUsername,
+    });
+
+    router.push(
+      `/room/${roomId}?host=true&username=${encodeURIComponent(hostUsername)}`
+    );
   };
+
+
+
 
   const handleSubmitJoin = () => {
     if (!joinUsername.trim() || !roomIdInput.trim()) return;
-    router.push(`/room/${roomIdInput}?username=${encodeURIComponent(joinUsername)}`);
+
+    socket.emit("check-room", { roomId: roomIdInput }, (exists: boolean) => {
+      if (!exists) {
+        alert("❌ Room does not exist");
+        return;
+      }
+
+      socket.emit("join-room", {
+        roomId: roomIdInput,
+        username: joinUsername,
+      });
+
+      router.push(
+        `/room/${roomIdInput}?username=${encodeURIComponent(joinUsername)}`
+      );
+    });
   };
+
 
   const words = [
     { text: "Typing" },
@@ -44,31 +99,31 @@ export default function Home() {
   return (
     <div className={`flex relative flex-col items-center tracking-tighter h-screen text-center px-4 mr-20`}>
       <div className={`z-1 w-[40vw] ${showHostModal || showJoinModal ? "hidden" : "block"}`}>
-        <div className={`text-6xl font-bold mb-4 mt-37 flex items-center justify-center gap-3`}>
+        <div className={`text-5xl font-bold mb-4 mt-37 flex items-center justify-center gap-3`}>
           <span className="text-white">Welcome to</span>
           <TypewriterEffect words={words} />
         </div>
 
         <div className="tracking-tighter">
-          <div className="mb-6 text-3xl mt-10 text-gray-300">
+          <div className="mb-6 text-2xl mt-10 text-gray-300">
             Test your typing speed and accuracy in real-time.<br />Click the button below to begin.
           </div>
         </div>
 
         <button
           onClick={handleStart}
-          className="mybutton text-2xl"
+          className="mybutton text-xl"
         >
           Start Typing Test
         </button>
 
         <div>
-          <div className="mb-6 text-3xl mt-8 text-gray-300">
+          <div className="mb-6 text-2xl mt-8 text-gray-300">
             Battle of Keyboards start here !!
           </div>
         </div>
 
-        <div className="flex gap-7 mt-2 text-2xl items-center justify-center">
+        <div className="flex gap-7 mt-2 text-xl items-center justify-center">
           <button onClick={handleCreateRoom} className="mybutton">Create Room</button>
           <button onClick={handleJoin} className="mybutton">Join Room</button>
         </div>
@@ -83,7 +138,7 @@ export default function Home() {
               type="text"
               value={hostUsername}
               onChange={(e) => setHostUsername(e.target.value)}
-              className="w-full border  border-gray-300 px-3 py-2 text-xl rounded mb-4"
+              className="w-full border text-blue-400 border-gray-300 px-3 py-2 text-xl rounded mb-4"
               placeholder="Your name"
             />
             <div className="flex justify-end gap-5">

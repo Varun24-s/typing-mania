@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import io from "socket.io-client";
 import TypingRace from "./TypingRace";
+import { IoMdPerson } from "react-icons/io";
 
 const socket = io({
   path: "/api/socket",
@@ -54,7 +55,7 @@ export default function RoomClient({ roomId }: RoomClientProps) {
   };
 
   if (raceStarted) {
-    return <TypingRace socket={socket} roomId={roomId} username={username} />;
+    return <TypingRace socket={socket} roomId={roomId} username={username} players={players}/>;
   }
 
   if (!username) {
@@ -72,20 +73,26 @@ export default function RoomClient({ roomId }: RoomClientProps) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#2b4031] text-white p-6">
-      <h1 className="text-3xl font-bold mb-2">Room ID: {roomId}</h1>
-      <h2 className="text-xl mb-4">Waiting for players...</h2>
-
+    <div className="flex flex-col items-center justify-center min-h-screen text-white p-6">
+      <h1 className="text-3xl font-bold mb-2">Room ID: <span className="text-blue-400">{roomId}</span></h1>
+      {isHost ? <h2 className="text-xl my-4">Waiting for players...</h2> 
+              : <h2 className="text-xl my-4">Waiting for host to start...</h2>
+      } 
+      <h3 className="text-2xl font-semibold mb-4">Players in Room:</h3>
       <ul className="mb-6">
         {players.map((name, i) => (
-          <li key={i} className="text-lg">👤 {name}</li>
+          <li key={i} className="text-2xl flex items-center gap-4"><IoMdPerson/>{name === username ? (
+            <span className="text-blue-400">{name} (You)</span>
+          ) : (
+            <span>{name}</span>
+          )}</li>
         ))}
       </ul>
 
       {isHost && (
         <button
           onClick={handleStartRace}
-          className="bg-green-600 px-4 py-2 rounded hover:bg-green-700 z-5"
+          className="mybutton z-5"
         >
           Start Race
         </button>

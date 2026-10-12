@@ -1,183 +1,221 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import uniqid from "uniqid";
-import { TypewriterEffect } from "@/components/typewriter-effect";
 import { socket } from "@/lib/socket";
-
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
-  const [showHostModal, setShowHostModal] = useState(false);
-  const [showJoinModal, setShowJoinModal] = useState(false);
-  const [hostUsername, setHostUsername] = useState("");
-  const [joinUsername, setJoinUsername] = useState("");
+  const [username, setUsername] = useState("");
   const [roomIdInput, setRoomIdInput] = useState("");
-
-  // const socketRef = useRef<any>(null);
-  // useEffect(() => {
-  //   // connect once on mount; defaults to same origin
-  //   socketRef.current = io();
-  //   return () => {
-  //     socketRef.current?.disconnect();
-  //   };
-  // }, []);
+  const [mode, setMode] = useState<"create" | "join">("create");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-  socket.on("username-error", (msg: string) => {
-    alert(`❌ ${msg}`);
-  });
+    fetch("/api/socket").catch(() => {});
 
-  socket.on("room-error", (msg: string) => {
-    alert(`❌ ${msg}`);
-  });
+    const handleRoomError = (msg: string) => {
+      setErrorMessage(msg || "Room does not exist.");
+      setIsSubmitting(false);
+    };
 
-  return () => {
-    socket.off("username-error");
-    socket.off("room-error");
-  };
-}, []);
+    socket.on("room-error", handleRoomError);
+    return () => {
+      socket.off("room-error", handleRoomError);
+    };
+  }, []);
 
+  const handleCreateRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanUser = username.trim();
+    if (!cleanUser) {
+      setErrorMessage("Enter your racer name to start.");
+      return;
+    }
 
-  const handleStart = () => {
-    router.push("/TypingTest");
-  };
-
-  const handleCreateRoom = () => {
-    setShowHostModal(true);
-  };
-
-  const handleJoin = () => {
-    setShowJoinModal(true);
-  };
-
-  const handleSubmitHost = () => {
-    if (!hostUsername.trim()) return;
-
+    setIsSubmitting(true);
+    setErrorMessage("");
     const roomId = uniqid();
 
     socket.emit("create-room", {
       roomId,
-      username: hostUsername,
+      username: cleanUser,
     });
 
     router.push(
-      `/room/${roomId}?host=true&username=${encodeURIComponent(hostUsername)}`
+      `/room/${roomId}?host=true&username=${encodeURIComponent(cleanUser)}`
     );
   };
 
+  const handleJoinRoom = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanUser = username.trim();
+    const cleanRoom = roomIdInput.trim();
 
+    if (!cleanUser) {
+      setErrorMessage("Enter your racer name.");
+      return;
+    }
+    if (!cleanRoom) {
+      setErrorMessage("Enter the room code.");
+      return;
+    }
 
+    setIsSubmitting(true);
+    setErrorMessage("");
 
-  const handleSubmitJoin = () => {
-    if (!joinUsername.trim() || !roomIdInput.trim()) return;
-
-    socket.emit("check-room", { roomId: roomIdInput }, (exists: boolean) => {
+    socket.emit("check-room", { roomId: cleanRoom }, (exists: boolean) => {
       if (!exists) {
-        alert("❌ Room does not exist");
+        setErrorMessage("Room not found. Check the code and try again.");
+        setIsSubmitting(false);
         return;
       }
 
       socket.emit("join-room", {
-        roomId: roomIdInput,
-        username: joinUsername,
+        roomId: cleanRoom,
+        username: cleanUser,
       });
 
-      router.push(
-        `/room/${roomIdInput}?username=${encodeURIComponent(joinUsername)}`
-      );
+      router.push(`/room/${cleanRoom}?username=${encodeURIComponent(cleanUser)}`);
     });
   };
 
-
-  const words = [
-    { text: "Typing" },
-    { text: "Mania" }
-  ];
-
   return (
-    <div className={`flex relative flex-col items-center tracking-tighter h-screen text-center px-4 mr-20`}>
-      <div className={`z-1 w-[40vw] ${showHostModal || showJoinModal ? "hidden" : "block"}`}>
-        <div className={`text-5xl font-bold mb-4 mt-37 flex items-center justify-center gap-3`}>
-          <span className="text-white">Welcome to</span>
-          <TypewriterEffect words={words} />
-        </div>
-
-        <div className="tracking-tighter">
-          <div className="mb-6 text-2xl mt-10 text-gray-300">
-            Test your typing speed and accuracy in real-time.<br />Click the button below to begin.
-          </div>
-        </div>
-
-        <button
-          onClick={handleStart}
-          className="mybutton text-xl"
-        >
-          Start Typing Test
-        </button>
-
-        <div>
-          <div className="mb-6 text-2xl mt-8 text-gray-300">
-            Battle of Keyboards start here !!
-          </div>
-        </div>
-
-        <div className="flex gap-7 mt-2 text-xl items-center justify-center">
-          <button onClick={handleCreateRoom} className="mybutton">Create Room</button>
-          <button onClick={handleJoin} className="mybutton">Join Room</button>
-        </div>
+    <div className="max-w-xl mx-auto py-12 sm:py-20">
+      {/* Typographic Title Header */}
+      <div className="mb-10 text-left">
+        <span className="text-[11px] font-mono-code font-medium uppercase tracking-widest text-[#77756F] block mb-2">
+          Competitive Typing
+        </span>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#191919] leading-tight">
+          Real-time typing races.
+          <br />
+          <span className="text-[#77756F] font-normal">Pure speed, zero clutter.</span>
+        </h1>
       </div>
 
-      {/* Modal for Host Username */}
-      {showHostModal && (
-        <div className="fixed inset-0 flex mt-40 justify-center z-5 mr-20">
-          <div className="text-white p-6 rounded-lg w-[40vw] ">
-            <h2 className="text-5xl font-bold mb-4">Enter your name</h2>
-            <input
-              type="text"
-              value={hostUsername}
-              onChange={(e) => setHostUsername(e.target.value)}
-              className="w-full border text-blue-400 border-gray-300 px-3 py-2 text-xl rounded mb-4"
-              placeholder="Your name"
-            />
-            <div className="flex justify-end gap-5">
-              <button onClick={() => setShowHostModal(false)} className="text-white text-2xl">
-                Cancel
-              </button>
-              <button onClick={handleSubmitHost} className="mybutton text-2xl">
-                Continue
-              </button>
-            </div>
-          </div>
+      {/* Main Entry Control Surface */}
+      <div className="panel p-6 sm:p-8 bg-white border border-[#E3E0D8]">
+        {/* Mode Selector Tabs */}
+        <div className="flex items-center border-b border-[#E3E0D8] pb-3 mb-6 gap-6 text-xs font-mono-code uppercase tracking-wider">
+          <button
+            type="button"
+            onClick={() => {
+              setMode("create");
+              setErrorMessage("");
+            }}
+            className={`pb-1 transition-colors relative cursor-pointer ${
+              mode === "create"
+                ? "text-[#191919] font-bold after:absolute after:bottom-[-13px] after:left-0 after:right-0 after:h-[2px] after:bg-[#FF4B35]"
+                : "text-[#77756F] hover:text-[#191919]"
+            }`}
+          >
+            Create Room
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setMode("join");
+              setErrorMessage("");
+            }}
+            className={`pb-1 transition-colors relative cursor-pointer ${
+              mode === "join"
+                ? "text-[#191919] font-bold after:absolute after:bottom-[-13px] after:left-0 after:right-0 after:h-[2px] after:bg-[#FF4B35]"
+                : "text-[#77756F] hover:text-[#191919]"
+            }`}
+          >
+            Join with Code
+          </button>
         </div>
-      )}
-      {/* Modal for Join Room */}
-      {showJoinModal && (
-        <div className="fixed inset-0 flex mt-40 justify-center z-5 mr-20">
-          <div className=" text-white p-6 rounded-lg w-[40vw]">
-            <h2 className="text-5xl font-bold mb-4">Join Room</h2>
-            <input
-              type="text"
-              value={joinUsername}
-              onChange={(e) => setJoinUsername(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2 text-xl rounded mb-4 "
-              placeholder="Your name"
-            />
-            <input
-              type="text"
-              value={roomIdInput}
-              onChange={(e) => setRoomIdInput(e.target.value)}
-              className="w-full border border-gray-300 px-3 py-2 text-xl rounded mb-4 "
-              placeholder="Enter Room ID"
-            />
-            <div className="flex justify-end gap-5">
-              <button onClick={() => setShowJoinModal(false)} className="text-white text-2xl">Cancel</button>
-              <button onClick={handleSubmitJoin} className="mybutton text-2xl">Join</button>
-            </div>
+
+        {errorMessage && (
+          <div className="mb-5 p-3 rounded-sm bg-[#FFF0EE] border border-[#FFD5CF] text-[#FF4B35] text-xs font-mono-code">
+            {errorMessage}
           </div>
-        </div>
-      )}
+        )}
+
+        {mode === "create" ? (
+          <form onSubmit={handleCreateRoom} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-[#77756F] mb-1.5 uppercase font-mono-code tracking-wider">
+                Racer Handle
+              </label>
+              <input
+                type="text"
+                autoFocus
+                required
+                maxLength={24}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full px-3.5 py-2.5 rounded-sm bg-[#F6F4EF] border border-[#E3E0D8] text-[#191919] placeholder-[#A3A097] text-sm font-medium focus:bg-white focus:border-[#191919] transition-colors"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !username.trim()}
+              className="btn-primary w-full py-2.5 text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Generating Lobby..." : "Create Race Room"}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleJoinRoom} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-[#77756F] mb-1.5 uppercase font-mono-code tracking-wider">
+                Racer Handle
+              </label>
+              <input
+                type="text"
+                autoFocus
+                required
+                maxLength={24}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full px-3.5 py-2.5 rounded-sm bg-[#F6F4EF] border border-[#E3E0D8] text-[#191919] placeholder-[#A3A097] text-sm font-medium focus:bg-white focus:border-[#191919] transition-colors"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-[#77756F] mb-1.5 uppercase font-mono-code tracking-wider">
+                Room Code
+              </label>
+              <input
+                type="text"
+                required
+                value={roomIdInput}
+                onChange={(e) => setRoomIdInput(e.target.value)}
+                placeholder="Paste room ID"
+                className="w-full px-3.5 py-2.5 rounded-sm bg-[#F6F4EF] border border-[#E3E0D8] text-[#191919] placeholder-[#A3A097] text-sm font-mono-code focus:bg-white focus:border-[#191919] transition-colors"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || !username.trim() || !roomIdInput.trim()}
+              className="btn-primary w-full py-2.5 text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "Connecting..." : "Join Race"}
+            </button>
+          </form>
+        )}
+      </div>
+
+      {/* Quieter Solo Practice Link */}
+      <div className="mt-8 flex items-center justify-between text-xs font-mono-code text-[#77756F] px-1">
+        <span>No opponents needed?</span>
+        <Link
+          href="/TypingTest"
+          className="text-[#191919] hover:text-[#FF4B35] transition-colors font-medium underline underline-offset-4 decoration-[#E3E0D8] hover:decoration-[#FF4B35]"
+        >
+          Solo practice sprint &rarr;
+        </Link>
+      </div>
     </div>
   );
 }

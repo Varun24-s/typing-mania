@@ -47,30 +47,30 @@ The application is art-directed with a restrained **Swiss Editorial Minimalist**
 ```mermaid
 graph TD
     subgraph Browser Clients
-        Host[Host Racer]
-        Player[Guest Racer]
-        Bots[Simulated Bots]
+        Host["Host Racer"]
+        Player["Guest Racer"]
+        Bots["Simulated Bots"]
     end
 
     subgraph Next.js Application
-        AppRouter[App Router Pages<br/>/, /room/[id], /test]
-        Middleware[Next.js Middleware<br/>Desktop Detection]
-        PagesSocket[Pages API Route<br/>/api/socket]
+        AppRouter["App Router Pages<br/>/, /room/:id, /test"]
+        Middleware["Next.js Middleware<br/>Desktop Detection"]
+        PagesSocket["Pages API Route<br/>/api/socket"]
     end
 
     subgraph Socket.IO Engine
-        RoomState[In-Memory Rooms Adapter]
-        Broadcast[Event Hub & Telemetry Dispatcher]
+        RoomState["In-Memory Rooms Adapter"]
+        Broadcast["Event Hub & Telemetry Dispatcher"]
     end
 
-    Host -->|join-room, start-race| PagesSocket
-    Player -->|join-room, player-progress| PagesSocket
-    Bots -->|join-room, player-progress| PagesSocket
+    Host -->|"join-room, start-race"| PagesSocket
+    Player -->|"join-room, player-progress"| PagesSocket
+    Bots -->|"join-room, player-progress"| PagesSocket
     PagesSocket --> RoomState
     RoomState --> Broadcast
-    Broadcast -->|race-started| Host & Player & Bots
-    Broadcast -->|opponent-progress| Host & Player
-    Broadcast -->|user-finished| Host & Player
+    Broadcast -->|"race-started"| Host & Player & Bots
+    Broadcast -->|"opponent-progress"| Host & Player
+    Broadcast -->|"user-finished"| Host & Player
 ```
 
 ### Telemetry & Real-Time Sync
